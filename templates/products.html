@@ -1,0 +1,20 @@
+<html>
+  <body>
+    <form action="/products" method="get">
+      <div><input type = "text" name = "q" /></textarea></div>
+      <div><input type="submit" value="Search"></div>
+    </form>
+    
+    {% if products %}
+	    Found {{products|length}} for {{q}}:
+	  	<ul>
+	    {% for product in products %}
+	      <li><img src = "{{product.ItemImage}}" />{{product.Itemname}}</li>
+	    {% endfor %}
+	    </ul>
+	    
+	    <a href = "/products?storeId={{store.StoreId}}&storename={{store.Storename}}@{{store.Address}}">Clear</a>
+	{% endif %}
+
+  </body>
+</html>

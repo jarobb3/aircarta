@@ -1,5 +1,7 @@
+import os
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.ext.webapp import template
 import supermarketapiface as facade
 
 class testing(webapp.RequestHandler):
@@ -33,9 +35,47 @@ class testing(webapp.RequestHandler):
         
         #self.response.out.write(items.content)
         
+class Stores(webapp.RequestHandler):  
+    def get(self):
+        zipcode = self.request.get('zipcode')
+        #extrapolate to city using usps zipcode lookup
         
+        if len(zipcode) == 0:
+            stores = []
+        else:
+            stores = facade.getstoresbyzip(zipcode)
+        
+        template_values = {
+           'stores' : stores,
+           'zipcode' : zipcode
+        }
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/stores.html')
+        self.response.out.write(template.render(path, template_values))
+        
+class Products(webapp.RequestHandler):
+    def get(self):
+        storeid = self.request.get('storeId')
+        storename = self.request.get('storename')
+        query = self.request.get('q')
+        
+        products = facade.findproductinstore(storeid,query)
+        
+        template_values = {
+           'products' : products,
+           'storename' : storename,
+           'q' : query
+        }
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/products.html')
+        self.response.out.write(template.render(path, template_values))
+        
+    
+          
 application = webapp.WSGIApplication(
-                                        [('/', testing)]
+                                        [('/', testing),
+                                         ('/stores', Stores),
+                                         ('/products', Products)]
                                     ,debug=True)
 
 def main():

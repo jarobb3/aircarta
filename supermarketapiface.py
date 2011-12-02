@@ -1,5 +1,6 @@
 import google.appengine.api.urlfetch as urlfetch
 import urllib
+import aparser
 
 apikey = 'ec4f187ef5'
 baseurl = 'http://www.SupermarketAPI.com/api.asmx/'
@@ -11,8 +12,10 @@ def getstoresbyzip(zipcode):
     params = {'apikey': apikey, 'zipcode' : zipcode }
     url = __addparameters( base, params )
     
-    response = urlfetch.fetch(url)
-    return response
+    responsexml = (urlfetch.fetch(url)).content
+    
+    stores = aparser.parsestores(responsexml)
+    return stores
 
 def getstoresbycity(city,state):
     apifunction = 'StoresByCityState'

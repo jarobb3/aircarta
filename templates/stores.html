@@ -1,0 +1,24 @@
+<html>
+  <body>
+    <form action="/stores" method="get">
+      <div><input type = "text" name = "zipcode" /></textarea></div>
+      <div><input type="submit" value="Search for Stores"></div>
+    </form>
+    
+    {% if stores %}
+	    Stores near {{zipcode}}:
+	  	<ul>
+	    {% for store in stores %}
+	      <li>
+	      	<a href = "/products?storeId={{store.StoreId}}&storename={{store.Storename}}@{{store.Address}}">
+	      		{{store.Storename}} @ {{store.Address}}
+	      	</a>
+	      </li>
+	    {% endfor %}
+	    </ul>
+	    
+	    <a href = "/stores">Clear</a>
+	{% endif %}
+
+  </body>
+</html>
