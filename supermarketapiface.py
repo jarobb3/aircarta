@@ -13,7 +13,6 @@ def getstoresbyzip(zipcode):
     url = __addparameters( base, params )
     
     responsexml = (urlfetch.fetch(url)).content
-    
     stores = aparser.parsestores(responsexml)
     return stores
 
@@ -38,8 +37,9 @@ def getstoresbycity(city,state):
     params = { 'apikey' : apikey, 'selectedcity' : city, 'selectedstate' : state }
     url = __addparameters( base, params )
     
-    response = urlfetch.fetch(url)
-    return response
+    responsexml = (urlfetch.fetch(url)).content
+    stores = aparser.parsestores(responsexml)
+    return stores
 
 def getstoresbyname(storename):
     apifunction = 'ReturnStoresByName'
@@ -78,3 +78,15 @@ def __addparameters(baseurl, params):
     url = url.rstrip('&')
     
     return url
+
+def ziptocitystate(zipcode):
+    params = { "zip5" : "94108" }
+    paramsdata = urllib.urlencode(params)
+    response = urlfetch.fetch("http://zip4.usps.com/zip4/zcl_3_results.jsp", paramsdata, urlfetch.POST )
+    s = response.content
+    s2 = s[s.find('Actual City'):]
+    s3 = s2[s2.find('<b>'):s2.find('</b>')]
+    s4 = s3.strip('<b></b>')
+    city = s4[:s4.find(',')]
+    state = s4[s4.find(',')+2:]
+    return city,state

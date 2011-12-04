@@ -6,10 +6,14 @@ import supermarketapiface as facade
 
 class testing(webapp.RequestHandler):
     def get(self):
-        self.response.headers.add_header("Access-Control-Allow-Origin", "*")
-        self.response.headers.add_header("Access-Control-Allow-Credentials", "true");
-        #self.response.headers['Content-Type'] = 'application/json'
-        self.response.headers['Content-Type'] = 'text/xml'
+        zipcode = self.request.get('zip')
+        citystate = facade.ziptocitystate(zipcode)
+        x = facade.getstoresbycity(citystate[0],citystate[1])
+        
+        #self.response.headers.add_header("Access-Control-Allow-Origin", "*")
+        #self.response.headers.add_header("Access-Control-Allow-Credentials", "true");
+        self.response.headers['Content-Type'] = 'application/json'
+        #self.response.headers['Content-Type'] = 'text/xml'
         
         #zipcode = self.request.get('zip')
         #stores = facade.getstoresbyzip(zipcode)
@@ -33,7 +37,7 @@ class testing(webapp.RequestHandler):
         #productid = '29467'
         #items = facade.getproduct(productid)
         
-        #self.response.out.write(items.content)
+        self.response.out.write(x)
         
 class Stores(webapp.RequestHandler):  
     def get(self):
@@ -43,7 +47,8 @@ class Stores(webapp.RequestHandler):
         if len(zipcode) == 0:
             stores = []
         else:
-            stores = facade.getstoresbyzip(zipcode)
+            citystate = facade.ziptocitystate(zipcode)
+            stores = facade.getstoresbycity(citystate[0],citystate[1])
         
         template_values = {
            'stores' : stores,
