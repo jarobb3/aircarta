@@ -17,6 +17,19 @@ def getstoresbyzip(zipcode):
     stores = aparser.parsestores(responsexml)
     return stores
 
+def findproductinstore(storeid,productname):
+    apifunction = 'SearchForItem'
+    base = baseurl + apifunction
+    
+    productname = urllib.quote(productname)
+    params = { 'apikey' : apikey, 'storeid' : storeid, 'itemname' : productname}
+    url = __addparameters( base, params )
+    
+    responsexml = (urlfetch.fetch(url)).content
+    
+    products = aparser.parseproducts(responsexml)
+    return products
+
 def getstoresbycity(city,state):
     apifunction = 'StoresByCityState'
     base = baseurl + apifunction
@@ -43,16 +56,6 @@ def searchbyproductname(productname):
     base = baseurl + apifunction
     
     params = { 'apikey' : apikey, 'itemname' : productname }
-    url = __addparameters( base, params )
-    
-    response = urlfetch.fetch(url)
-    return response
-
-def findproductinstore(productname,storeid):
-    apifunction = 'SearchForItem'
-    base = baseurl + apifunction
-    
-    params = { 'apikey' : apikey, 'storeid' : storeid, 'itemname' : productname}
     url = __addparameters( base, params )
     
     response = urlfetch.fetch(url)

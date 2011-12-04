@@ -1,7 +1,9 @@
 <html>
   <body>
     <form action="/products" method="get">
-      <div><input type = "text" name = "q" /></textarea></div>
+      <div>Search for a product: <input type = "text" name = "q" /></textarea></div>
+      <input type = "hidden" name = "storeId" value = "{{storeid}}" />
+      <input type = "hidden" name = "storename" value = "{{storename}}" />
       <div><input type="submit" value="Search"></div>
     </form>
     
@@ -13,7 +15,8 @@
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/products?storeId={{store.StoreId}}&storename={{store.Storename}}@{{store.Address}}">Clear</a>
+	    <a href = "/products?storeId={{storeid}}&storename={{storename}}">Clear</a>
+	    <a href = "/stores">Back to Store Select</a>
 	{% endif %}
 
   </body>

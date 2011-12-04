@@ -59,11 +59,15 @@ class Products(webapp.RequestHandler):
         storename = self.request.get('storename')
         query = self.request.get('q')
         
-        products = facade.findproductinstore(storeid,query)
+        if len(query) == 0:
+            products = []
+        else:
+            products = facade.findproductinstore(storeid,query)
         
         template_values = {
            'products' : products,
            'storename' : storename,
+           'storeid' : storeid,
            'q' : query
         }
         
