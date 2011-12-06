@@ -1,22 +1,28 @@
 <html>
   <body>
     <form action="/products" method="get">
-      <div>Search for a product: <input type = "text" name = "q" /></textarea></div>
+      <div>Search for a product: <input type = "text" name = "q" /></div>
       <input type = "hidden" name = "storeId" value = "{{storeid}}" />
       <input type = "hidden" name = "storename" value = "{{storename}}" />
       <div><input type="submit" value="Search"></div>
     </form>
     
     {% if products %}
+    	
 	    Found {{products|length}} for {{q}}:
 	  	<ul>
 	    {% for product in products %}
-	      <li><img src = "{{product.ItemImage}}" />{{product.Itemname}}</li>
+	      <li>
+	      	<a href = "/add?itemid={{product.ItemID}}&itemname={{product.Itemname}}&category={{product.ItemCategory}}&itemimage={{product.ItemImage}}">
+	      		<img src = "{{product.ItemImage}}" />{{product.Itemname}}
+	      	</a>
+	      </li>
 	    {% endfor %}
 	    </ul>
 	    
 	    <a href = "/products?storeId={{storeid}}&storename={{storename}}">Clear</a>
 	    <a href = "/stores">Back to Store Select</a>
+	    
 	{% endif %}
 
   </body>

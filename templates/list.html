@@ -1,0 +1,19 @@
+<html>
+  <body>
+    
+    {% if products %}
+    	<a href = "/products">Add Product</a>
+	  	<ul>
+	    {% for product in products %}
+	      <li>
+	      	{{product.name}}
+	      </li>
+	    {% endfor %}
+	    </ul>
+	    
+	    <a href = "/sendlist">Send</a>
+	    <a href = "/list?act=clear">Clear List</a>
+	{% endif %}
+
+  </body>
+</html>

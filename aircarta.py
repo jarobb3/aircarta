@@ -1,8 +1,12 @@
 import os
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
+from google.appengine.api import memcache
+
 import supermarketapiface as facade
+import models
 
 class testing(webapp.RequestHandler):
     def get(self):
@@ -60,8 +64,16 @@ class Stores(webapp.RequestHandler):
         
 class Products(webapp.RequestHandler):
     def get(self):
-        storeid = self.request.get('storeId')
-        storename = self.request.get('storename')
+        storeid = self.request.get('storeId') or memcache.get(key='storeid')
+        storename = self.request.get('storename') or memcache.get(key='storename')
+        
+        if not storeid or not storename:
+            self.redirect('stores')
+            return
+        
+        memcache.add(key='storeid',value=storeid)
+        memcache.add(key='storename',value=storename)
+        
         query = self.request.get('q')
         
         if len(query) == 0:
@@ -79,12 +91,51 @@ class Products(webapp.RequestHandler):
         path = os.path.join(os.path.dirname(__file__), 'templates/products.html')
         self.response.out.write(template.render(path, template_values))
         
+class List(webapp.RequestHandler):
+    def get(self):
+        action = self.request.get('act')
+        if action == 'clear':
+            models.clearproducts()
+            
+        products = models.getproducts()
+        
+        #count = 0
+        #for p in products:
+            #count = count + 1
+        
+        #print count
+        #return
+        template_values = {
+           'products' : products
+        }
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/list.html')
+        self.response.out.write(template.render(path, template_values))
+        
+
+class Grocerylist(webapp.RequestHandler):
+    def get(self):    
+        listname = "list"
+        key = models.productkey(listname)
+        p = models.Product(parent=key)
+        
+        p.itemid = int(self.request.get('itemid'))
+        p.name = self.request.get('itemname')
+        p.category = self.request.get('category')
+        p.image = self.request.get('itemimage')
+        
+        p.put()
+        
+        self.redirect('/list')
+        
     
           
 application = webapp.WSGIApplication(
                                         [('/', testing),
                                          ('/stores', Stores),
-                                         ('/products', Products)]
+                                         ('/products', Products),
+                                         ('/add',Grocerylist),
+                                         ('/list', List)]
                                     ,debug=True)
 
 def main():
