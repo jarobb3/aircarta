@@ -4,19 +4,38 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
 from google.appengine.api import memcache
+from google.appengine.api import mail
+
+from django.utils.html import strip_tags
 
 import supermarketapiface as facade
 import models
 
 class testing(webapp.RequestHandler):
     def get(self):
-        zipcode = self.request.get('zip')
-        citystate = facade.ziptocitystate(zipcode)
-        x = facade.getstoresbycity(citystate[0],citystate[1])
+        mail.send_mail(sender="Example.com Support <support@example.com>",
+              to="Albert Johnson <Albert.Johnson@example.com>",
+              subject="Your account has been approved",
+              body="""
+                Dear Albert:
+                
+                Your example.com account has been approved.  You can now visit
+                http://www.example.com/ and sign in using your Google Account to
+                access new features.
+                
+                Please let us know if you have any questions.
+                
+                The example.com Team
+                """)
+        #print message.to
+        #message.send()
+        #zipcode = self.request.get('zip')
+        #citystate = facade.ziptocitystate(zipcode)
+        #x = facade.getstoresbycity(citystate[0],citystate[1])
         
         #self.response.headers.add_header("Access-Control-Allow-Origin", "*")
         #self.response.headers.add_header("Access-Control-Allow-Credentials", "true");
-        self.response.headers['Content-Type'] = 'application/json'
+        #self.response.headers['Content-Type'] = 'application/json'
         #self.response.headers['Content-Type'] = 'text/xml'
         
         #zipcode = self.request.get('zip')
@@ -41,7 +60,8 @@ class testing(webapp.RequestHandler):
         #productid = '29467'
         #items = facade.getproduct(productid)
         
-        self.response.out.write(x)
+        
+        #self.response.out.write(x)
         
 class Stores(webapp.RequestHandler):  
     def get(self):
@@ -94,10 +114,28 @@ class Products(webapp.RequestHandler):
 class List(webapp.RequestHandler):
     def get(self):
         action = self.request.get('act')
-        if action == 'clear':
+        message = ''
+        
+        if action == 'add':
+            itemaddedname = self.request.get('item')
+            message = itemaddedname + ' has been added to your list...'
+        elif action == 'clear':
             models.clearproducts()
+            message = 'list cleared...'
+        elif action == 'del':
+            itemid = int(self.request.get('item'))
+            products = models.getproducts('list')
+            for product in products:
+                if product.itemid == itemid:
+                    message = product.name + ' has been removed from your list...'
+                    product.delete()
+                    break
+        elif action == 'sent':
+            message = 'your list has been sent. thanks!'
             
-        products = models.getproducts()
+        listname = "list"
+        products = models.getproducts(listname)
+        storename = self.request.get('storename') or memcache.get(key='storename')
         
         #count = 0
         #for p in products:
@@ -106,7 +144,10 @@ class List(webapp.RequestHandler):
         #print count
         #return
         template_values = {
-           'products' : products
+           'products' : products,
+           'listname' : listname,
+           'storename': storename,
+           'message' : message
         }
         
         path = os.path.join(os.path.dirname(__file__), 'templates/list.html')
@@ -123,19 +164,68 @@ class Grocerylist(webapp.RequestHandler):
         p.name = self.request.get('itemname')
         p.category = self.request.get('category')
         p.image = self.request.get('itemimage')
+        p.quantity = 1
         
         p.put()
         
-        self.redirect('/list')
+        self.redirect('/list?act=add&item='+p.name)
         
+class Message(webapp.RequestHandler):
+    def get(self):
+        listname = self.request.get('listname')
+        products = models.getproducts(listname)
+        storename = self.request.get('storename') or memcache.get(key='storename')
+       
+        
+        template_values = {
+           'products' : products,
+           'storename' : storename
+        }
+        
+        sender = "AirCart Confirmation <aircarty@gmail.com>"
+        subject = "New Cart Order!"
+        to = "AirCart Fulfillment <aircarty@gmail.com>"
+        
+        intro = """   
+            Yo,
+            
+            We just got a new order! Here's the user's list --
+        """
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/email.html')
+        productlist = template.render(path,template_values)        
+        
+        signature = """
+            Hugs,<br />
+            AircartApp
+            """
+        
+        html_content = intro+productlist+signature
+        text_content = strip_tags(html_content)
+        
+        message = mail.EmailMessage()
+        message.sender = sender
+        message.subject = subject
+        message.to = to
+        message.body = text_content
+        message.html = html_content
+        
+        #self.response.headers['Content-Type'] = 'text/html'
+        
+        #print message.body
+        #self.response.out.write(message.body)            
+        message.send()
+        
+        self.redirect('/list?act=sent')
     
           
 application = webapp.WSGIApplication(
                                         [('/', testing),
                                          ('/stores', Stores),
                                          ('/products', Products),
-                                         ('/add',Grocerylist),
-                                         ('/list', List)]
+                                         ('/add', Grocerylist),
+                                         ('/list', List),
+                                         ('/send', Message)]
                                     ,debug=True)
 
 def main():

@@ -1,17 +1,20 @@
 <html>
   <body>
-    
+    {% if message %}
+   	 {{message}}<br />
+   	{% endif %}
     {% if products %}
     	<a href = "/products">Add Product</a>
 	  	<ul>
 	    {% for product in products %}
 	      <li>
 	      	{{product.name}}
+	      	<a href = "/list?act=del&item={{product.itemid}}">Remove</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/sendlist">Send</a>
+	    <a href = "/send?listname={{listname}}&storename={{storename}}">Send</a>
 	    <a href = "/list?act=clear">Clear List</a>
 	{% endif %}
 

@@ -1,0 +1,14 @@
+<html>
+<body>
+
+	Shop at : {{storename}} <br />
+	<ul>
+	{% for product in products %}
+		<li>
+			{{product.itemid}}&nbsp;{{product.name}}
+		</li>
+	{% endfor %}
+	</ul>
+
+</body>
+</html>

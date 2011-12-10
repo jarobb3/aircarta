@@ -13,7 +13,7 @@
 	  	<ul>
 	    {% for product in products %}
 	      <li>
-	      	<a href = "/add?itemid={{product.ItemID}}&itemname={{product.Itemname}}&category={{product.ItemCategory}}&itemimage={{product.ItemImage}}">
+	      	<a href = "/add?itemid={{product.ItemID}}&itemname={{product.Itemname}}&category={{product.ItemCategory}}&itemimage={{product.ItemImage}}&storenme={{storename}}">
 	      		<img src = "{{product.ItemImage}}" />{{product.Itemname}}
 	      	</a>
 	      </li>
