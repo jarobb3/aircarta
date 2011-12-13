@@ -1,9 +1,7 @@
 <html>
   <body>
-    <form action="/products" method="get">
+    <form action="/products/search" method="get">
       <div>Search for a product: <input type = "text" name = "q" /></div>
-      <input type = "hidden" name = "storeId" value = "{{storeid}}" />
-      <input type = "hidden" name = "storename" value = "{{storename}}" />
       <div><input type="submit" value="Search"></div>
     </form>
     
@@ -13,15 +11,14 @@
 	  	<ul>
 	    {% for product in products %}
 	      <li>
-	      	<a href = "/add?itemid={{product.ItemID}}&itemname={{product.Itemname}}&category={{product.ItemCategory}}&itemimage={{product.ItemImage}}&storenme={{storename}}">
+	      	<a href = "/products/add?itemid={{product.ItemID|urlencode}}&itemname={{product.Itemname|urlencode}}&category={{product.ItemCategory|urlencode}}&itemimage={{product.ItemImage|urlencode}}">
 	      		<img src = "{{product.ItemImage}}" />{{product.Itemname}}
 	      	</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/products?storeId={{storeid}}&storename={{storename}}">Clear</a>
-	    <a href = "/stores">Back to Store Select</a>
+	    <a href = "/products/search">Clear</a>
 	    
 	{% endif %}
 

@@ -1,8 +1,8 @@
 <html>
   <body>
-  	<div>Hi, {{user.nickname}}</div><a href = "/logout">Logout</a>
-    <form action="/stores" method="get">
-      <div>Search for stores by zip: <input type = "text" name = "zipcode" /></textarea></div>
+  	<div>Hi, {{user.nickname}}  <a href = "/logout">Logout</a></div><br />
+    <form action="/stores/search" method="get">
+      <div>Search for stores by zip: <br /><input type = "text" name = "zipcode" /></textarea></div>
       <div><input type="submit" value="Search for Stores"></div>
     </form>
     
@@ -11,7 +11,7 @@
 	  	<ul>
 	    {% for store in stores %}
 	      <li>
-	      	<a href = "/products?storeId={{store.StoreId}}&storename={{store.Storename}}@{{store.Address}}">
+	      	<a href = "/stores/select?storeid={{store.StoreId|urlencode}}&storename={{store.Storename|urlencode}}&storeaddress={{store.Address|urlencode}}&zipcode={{zipcode|urlencode}}">
 	      		{{store.Storename}} @ {{store.Address}}
 	      	</a>
 	      </li>

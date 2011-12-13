@@ -1,9 +1,6 @@
-import os
-
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
-from google.appengine.api import memcache
 from google.appengine.api import mail
 from google.appengine.api import users
 
@@ -11,245 +8,284 @@ from django.utils.html import strip_tags
 
 import supermarketapiface as facade
 import models
+import os
 
 class Login(webapp.RequestHandler):
     def get(self):
         user = users.get_current_user()
         
         if user:
-            self.redirect('/stores')
+            username = user.nickname()
+            u = models.getuser(username)
+            if u:
+                if u.store:
+                    self.redirect('/list')
+                    pass
+                else:
+                    self.redirect('/stores/search')
+                    pass
+            else:
+                #create user object if there's none in the database
+                newuser = models.User(key_name=username)
+                newuser.userobj = u
+                newuser.put()
         else:
             self.redirect(users.create_login_url(self.request.uri))
             
 class Logout(webapp.RequestHandler):
     def get(self):
-        self.redirect(users.create_logout_url('/'))
-
-class testing(webapp.RequestHandler):
+        self.redirect(users.create_logout_url('/login'))
+    
+class StoreSearch(webapp.RequestHandler):
     def get(self):
-        mail.send_mail(sender="Example.com Support <support@example.com>",
-              to="Albert Johnson <Albert.Johnson@example.com>",
-              subject="Your account has been approved",
-              body="""
-                Dear Albert:
-                
-                Your example.com account has been approved.  You can now visit
-                http://www.example.com/ and sign in using your Google Account to
-                access new features.
-                
-                Please let us know if you have any questions.
-                
-                The example.com Team
-                """)
-        #print message.to
-        #message.send()
-        #zipcode = self.request.get('zip')
-        #citystate = facade.ziptocitystate(zipcode)
-        #x = facade.getstoresbycity(citystate[0],citystate[1])
-        
-        #self.response.headers.add_header("Access-Control-Allow-Origin", "*")
-        #self.response.headers.add_header("Access-Control-Allow-Credentials", "true");
-        #self.response.headers['Content-Type'] = 'application/json'
-        #self.response.headers['Content-Type'] = 'text/xml'
-        
-        #zipcode = self.request.get('zip')
-        #stores = facade.getstoresbyzip(zipcode)
-        
-        #city = 'San Francisco'
-        #state = 'CA'
-        #stores = facade.getstoresbycity(city,state)
-        
-        #storename = 'Safeway'
-        #stores = facade.getstoresbyname(storename)
-        
-        #self.response.out.write(stores.content)
-        
-        #productname = 'milk'
-        #items = facade.searchbyproductname(productname)
-        
-        #productname = 'milk'
-        #storeid = 'e6k3fjw75k'
-        #items = facade.findproductinstore(productname,storeid)
-        
-        #productid = '29467'
-        #items = facade.getproduct(productid)
-        
-        
-        #self.response.out.write(x)
-        
-class Stores(webapp.RequestHandler):  
-    def get(self):
+        #search for stores and template
         user = users.get_current_user()
         zipcode = self.request.get('zipcode')
-        #extrapolate to city using usps zipcode lookup
+        stores = []
         
-        if len(zipcode) == 0:
-            stores = []
-        else:
+        if len(zipcode) != 0:
             citystate = facade.ziptocitystate(zipcode)
-            stores = facade.getstoresbycity(citystate[0],citystate[1])
+            stores = facade.getstoresbycity(citystate[0], citystate[1])
         
         template_values = {
-           'stores' : stores,
-           'zipcode' : zipcode,
-           'user' : user
+            'stores' : stores,
+            'zipcode' : zipcode,
+            'user' : user
         }
         
         path = os.path.join(os.path.dirname(__file__), 'templates/stores.html')
         self.response.out.write(template.render(path, template_values))
         
-class Products(webapp.RequestHandler):
+        
+class StoreSelection(webapp.RequestHandler):
     def get(self):
-        storeid = self.request.get('storeId') or memcache.get(key='storeid')
-        storename = self.request.get('storename') or memcache.get(key='storename')
+        #save user's store preference to user object
+        storeid = self.request.get('storeid')
+        storename = self.request.get('storename')
+        storeaddress = self.request.get('storeaddress')
         
-        if not storeid or not storename:
-            self.redirect('stores')
-            return
+        store = models.getstore(storeid)
+        if not store:
+            #store does not exist in the database, add it
+            newstore = models.Store(key_name=storeid)
+            newstore.storeid = storeid
+            newstore.storename = storename
+            newstore.storeaddress = storeaddress
+            
+            newstore.put()
+            store = newstore
+            
+            user = users.get_current_user()
+            zipcode = self.request.get('zipcode')
+            citystate = facade.ziptocitystate(zipcode)
+            city = citystate[0]
+            state = citystate[1]
+            
+            u = models.getuser(user.nickname())
+            u.store = store
+            u.zipcode = zipcode
+            u.city = city
+            u.state = state
+            
+            u.put()
         
-        memcache.add(key='storeid',value=storeid)
-        memcache.add(key='storename',value=storename)
-        
-        query = self.request.get('q')
-        
-        if len(query) == 0:
-            products = []
-        else:
-            products = facade.findproductinstore(storeid,query)
-        
-        template_values = {
-           'products' : products,
-           'storename' : storename,
-           'storeid' : storeid,
-           'q' : query
-        }
-        
-        path = os.path.join(os.path.dirname(__file__), 'templates/products.html')
-        self.response.out.write(template.render(path, template_values))
-        
+        self.redirect('/list')
+    
 class List(webapp.RequestHandler):
     def get(self):
-        action = self.request.get('act')
+        message = self.request.get('message')
+        if message == 'add':
+            itemname = self.request.get('item')
+            message = itemname + ' has been added to your list.'
+        elif message == 'delete':
+            itemname = self.request.get('item')
+            message = itemname + ' has been removed from your list.'
+        elif message == 'update':
+            itemname = self.request.get('item')
+            message = 'The quantity of ' + itemname + ' has been updated.'
+        elif message == 'send':
+            message = 'Your order has been sent! You have 24 hours to update your order before it\'s set in stone.'
+        else:
+            message = ""
+        
         user = users.get_current_user()
-        message = ''
+        username = user.nickname()
+        u = models.getuser(username)
         
-        if action == 'add':
-            itemaddedname = self.request.get('item')
-            message = itemaddedname + ' has been added to your list...'
-        elif action == 'clear':
-            models.clearproducts()
-            message = 'list cleared...'
-        elif action == 'del':
-            itemid = int(self.request.get('item'))
-            products = models.getproducts('list')
-            for product in products:
-                if product.itemid == itemid:
-                    message = product.name + ' has been removed from your list...'
-                    product.delete()
-                    break
-        elif action == 'sent':
-            message = 'your list has been sent. thanks!'
+        lists = models.getlistsforuser(u.key())
+        if len(lists) == 0:
+            #user has no lists yet, create their first one
             
-        listname = "list"
-        products = models.getproducts(listname)
-        storename = self.request.get('storename') or memcache.get(key='storename')
+            userkey = models.userkey(username)
+            newlist = models.GroceryList(parent=userkey)
+            
+            newlist.store = u.store
+            newlist.fulfilled = False
+            
+            newlist.put()
+            thelist = newlist
+        else:
+            #open most recent list; either at the beginning or end
+            thelist = lists[len(lists)-1]
         
-        #count = 0
-        #for p in products:
-            #count = count + 1
+        products = models.getproductsoflist(thelist.key())
         
-        #print count
-        #return
         template_values = {
            'products' : products,
-           'listname' : listname,
-           'storename': storename,
-           'message' : message,
-           'user' : user
+           'user' : u,
+           'list' : thelist,
+           'message' : message
         }
         
         path = os.path.join(os.path.dirname(__file__), 'templates/list.html')
         self.response.out.write(template.render(path, template_values))
-        
-
-class Grocerylist(webapp.RequestHandler):
-    def get(self):    
-        listname = "list"
-        user = users.get_current_user()
-        key = models.productkey(listname)
-        p = models.Product(parent=key)
-        
-        p.user = user
-        p.itemid = int(self.request.get('itemid'))
-        p.name = self.request.get('itemname')
-        p.category = self.request.get('category')
-        p.image = self.request.get('itemimage')
-        p.quantity = 1
-        
-        p.put()
-        
-        self.redirect('/list?act=add&item='+p.name)
-        
-class Message(webapp.RequestHandler):
+    
+class ProductSearch(webapp.RequestHandler):
     def get(self):
         user = users.get_current_user()
-        listname = self.request.get('listname')
-        products = models.getproducts(listname)
-        storename = self.request.get('storename') or memcache.get(key='storename')
-       
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        query = self.request.get('q')
+        
+        results = []
+        if query:
+            results = facade.findproductinstore(u.store.storeid, query)
+
+        template_values = {
+           'products' : results,
+           'q' : query
+        }  
+              
+        path = os.path.join(os.path.dirname(__file__), 'templates/products.html')
+        self.response.out.write(template.render(path, template_values))
+    
+class ProductAdd(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        productid = self.request.get('itemid')
+        productname = self.request.get('itemname')
+        category = self.request.get('category')
+        image = self.request.get('image')
+        
+        lists = models.getlistsforuser(u.key())
+        thelist = lists[len(lists)-1]
+        
+        product = models.Product(parent=thelist.key(),key_name=productid)
+        product.productid = productid
+        product.productname = productname
+        product.category = category
+        product.image = image
+        product.quantity = 1
+        
+        #print product.to_xml()
+        product.put()
+        
+        self.redirect('/list?message=add&item='+product.productname)
+    
+class ProductDelete(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        lists = models.getlistsforuser(u.key())
+        thelist = lists[len(lists)-1]
+        
+        productid = self.request.get('productid')
+        key = models.productkey(username, thelist.key().id_or_name(), productid)
+        
+        product = models.getproductinlist(key)
+        product.delete()
+        
+        self.redirect('/list?message=delete&item='+product.productname)
+
+class ProductUpdate(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        lists = models.getlistsforuser(u.key())
+        thelist = lists[len(lists)-1]
+        
+        productid = self.request.get('productid')
+        key = models.productkey(username, thelist.key().id_or_name(), productid)
+        
+        product = models.getproductinlist(key)
+        
+        operation = self.request.get('oper')
+        if operation == 'plus':
+            product.quantity += 1
+        elif operation == 'minus':
+            product.quantity -= 1
+        else:
+            pass
+        
+        product.put()
+        
+        self.redirect('/list?message=update&item='+product.productname)
+    
+class Email(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        lists = models.getlistsforuser(u.key())
+        thislist = lists[len(lists)-1]
+        products = models.getproductsoflist(thislist.key())
         
         template_values = {
            'products' : products,
-           'storename' : storename,
-           'user' : user
+           'store' : u.store,
+           'user' : u
         }
         
-        sender = user.email()
-        subject = "New Cart Order!"
-        to = "AirCart Fulfillment <aircarty@gmail.com>"
-        
-        intro = """   
+        intro = """
             Yo,
             
             We just got a new order! Here's the user's list --
+        
         """
         
         path = os.path.join(os.path.dirname(__file__), 'templates/email.html')
-        productlist = template.render(path,template_values)        
+        productlist = template.render(path,template_values)
         
         signature = """
-            Hugs,<br />
+            Hugs, <br />
             AircartApp
-            """
+        """
         
         html_content = intro+productlist+signature
         text_content = strip_tags(html_content)
         
         message = mail.EmailMessage()
-        message.sender = sender
-        message.subject = subject
-        message.to = to
+        message.sender = user.email()
+        message.subject = "New AirCart Order!"
+        message.to = "AirCart FulFillment <aircart@gmail.com>"
         message.body = text_content
         message.html = html_content
-        
-        #self.response.headers['Content-Type'] = 'text/html'
-        
-        #print message.body
-        #self.response.out.write(message.body)            
         message.send()
         
-        self.redirect('/list?act=sent')
+        self.redirect('/list?message=send')
+        
     
-          
 application = webapp.WSGIApplication(
                                         [('/', Login),
+                                         ('/login', Login),
                                          ('/logout', Logout),
-                                         ('/test', testing),
-                                         ('/stores', Stores),
-                                         ('/products', Products),
-                                         ('/add', Grocerylist),
+                                         ('/stores/search', StoreSearch),
+                                         ('/stores/select', StoreSelection),
                                          ('/list', List),
-                                         ('/send', Message)]
+                                         ('/products/search', ProductSearch),
+                                         ('/products/add', ProductAdd),
+                                         ('/products/delete', ProductDelete),
+                                         ('/products/update', ProductUpdate),
+                                         ('/send', Email)]
                                     ,debug=True)
 
 def main():

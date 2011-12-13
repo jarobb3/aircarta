@@ -1,23 +1,26 @@
 <html>
   <body>
-    {% if message %}
-   	 <i>{{message}}</i><br />
-   	{% endif %}
-   	<br /><div>{{ user.nickname }}, here's your current list :</div>
+   	<b><i>{{message}}</i></b><br /><br />
+   	<div>Hi, {{user.userobj.nickname}} <a href = "/logout">Logout</a></div>
+   	<div>You're shopping at {{user.store.storename}}, located at {{user.store.storeaddress}} in {{user.city}} {{user.state}}.</div>
+   	<div>Your list contains {{products|length}} items.</div>
+   	<br />
+   	<div><a href = "/products/search">Add an item</a></div>
     {% if products %}
-    	<a href = "/products">Add Product</a>
 	  	<ul>
 	    {% for product in products %}
 	      <li>
-	      	{{product.name}}
-	      	<a href = "/list?act=del&item={{product.itemid}}">Remove</a>
+	      	<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=minus">-</a></b>
+	      	{{product.quantity}}
+	      	<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=plus">+</a></b>
+	      	 | {{product.productname}} ({{product.category}})
+	      	
+	      	<a href = "/products/delete?productid={{product.productid|urlencode}}">Remove</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
 	    <a href = "/send?listname={{listname}}&storename={{storename}}">Send</a>
-	    <a href = "/list?act=clear">Clear List</a>
-	    <a href = "/logout">Logout</a>
 	{% endif %}
 
   </body>

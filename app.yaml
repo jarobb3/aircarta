@@ -4,11 +4,6 @@ runtime: python
 api_version: 1
 
 handlers:
-
-- url: /
-  script: aircarta.py
-  
 - url: /.*
-  login: required
   script: aircarta.py
-
+  login: required
