@@ -200,7 +200,8 @@ class Message(webapp.RequestHandler):
         
         template_values = {
            'products' : products,
-           'storename' : storename
+           'storename' : storename,
+           'user' : user
         }
         
         sender = user.email()
