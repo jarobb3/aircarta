@@ -1,8 +1,9 @@
 <html>
   <body>
     {% if message %}
-   	 {{message}}<br />
+   	 <i>{{message}}</i><br />
    	{% endif %}
+   	<br /><div>{{ user.nickname }}, here's your current list :</div>
     {% if products %}
     	<a href = "/products">Add Product</a>
 	  	<ul>
@@ -16,6 +17,7 @@
 	    
 	    <a href = "/send?listname={{listname}}&storename={{storename}}">Send</a>
 	    <a href = "/list?act=clear">Clear List</a>
+	    <a href = "/logout">Logout</a>
 	{% endif %}
 
   </body>

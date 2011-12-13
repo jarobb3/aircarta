@@ -5,11 +5,25 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
 from google.appengine.api import memcache
 from google.appengine.api import mail
+from google.appengine.api import users
 
 from django.utils.html import strip_tags
 
 import supermarketapiface as facade
 import models
+
+class Login(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        
+        if user:
+            self.redirect('/stores')
+        else:
+            self.redirect(users.create_login_url(self.request.uri))
+            
+class Logout(webapp.RequestHandler):
+    def get(self):
+        self.redirect(users.create_logout_url('/'))
 
 class testing(webapp.RequestHandler):
     def get(self):
@@ -65,6 +79,7 @@ class testing(webapp.RequestHandler):
         
 class Stores(webapp.RequestHandler):  
     def get(self):
+        user = users.get_current_user()
         zipcode = self.request.get('zipcode')
         #extrapolate to city using usps zipcode lookup
         
@@ -76,7 +91,8 @@ class Stores(webapp.RequestHandler):
         
         template_values = {
            'stores' : stores,
-           'zipcode' : zipcode
+           'zipcode' : zipcode,
+           'user' : user
         }
         
         path = os.path.join(os.path.dirname(__file__), 'templates/stores.html')
@@ -114,6 +130,7 @@ class Products(webapp.RequestHandler):
 class List(webapp.RequestHandler):
     def get(self):
         action = self.request.get('act')
+        user = users.get_current_user()
         message = ''
         
         if action == 'add':
@@ -147,7 +164,8 @@ class List(webapp.RequestHandler):
            'products' : products,
            'listname' : listname,
            'storename': storename,
-           'message' : message
+           'message' : message,
+           'user' : user
         }
         
         path = os.path.join(os.path.dirname(__file__), 'templates/list.html')
@@ -157,9 +175,11 @@ class List(webapp.RequestHandler):
 class Grocerylist(webapp.RequestHandler):
     def get(self):    
         listname = "list"
+        user = users.get_current_user()
         key = models.productkey(listname)
         p = models.Product(parent=key)
         
+        p.user = user
         p.itemid = int(self.request.get('itemid'))
         p.name = self.request.get('itemname')
         p.category = self.request.get('category')
@@ -172,6 +192,7 @@ class Grocerylist(webapp.RequestHandler):
         
 class Message(webapp.RequestHandler):
     def get(self):
+        user = users.get_current_user()
         listname = self.request.get('listname')
         products = models.getproducts(listname)
         storename = self.request.get('storename') or memcache.get(key='storename')
@@ -182,7 +203,7 @@ class Message(webapp.RequestHandler):
            'storename' : storename
         }
         
-        sender = "AirCart Confirmation <aircarty@gmail.com>"
+        sender = user.email()
         subject = "New Cart Order!"
         to = "AirCart Fulfillment <aircarty@gmail.com>"
         
@@ -220,7 +241,9 @@ class Message(webapp.RequestHandler):
     
           
 application = webapp.WSGIApplication(
-                                        [('/', testing),
+                                        [('/', Login),
+                                         ('/logout', Logout),
+                                         ('/test', testing),
                                          ('/stores', Stores),
                                          ('/products', Products),
                                          ('/add', Grocerylist),
