@@ -80,7 +80,7 @@ def __addparameters(baseurl, params):
     return url
 
 def ziptocitystate(zipcode):
-    params = { "zip5" : "94108" }
+    params = { "zip5" : zipcode }
     paramsdata = urllib.urlencode(params)
     response = urlfetch.fetch("http://zip4.usps.com/zip4/zcl_3_results.jsp", paramsdata, urlfetch.POST )
     s = response.content
