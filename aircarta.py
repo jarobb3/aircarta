@@ -9,6 +9,7 @@ from django.utils.html import strip_tags
 import supermarketapiface as facade
 import models
 import os
+import urllib
 
 class Login(webapp.RequestHandler):
     def get(self):
@@ -17,18 +18,20 @@ class Login(webapp.RequestHandler):
         if user:
             username = user.nickname()
             u = models.getuser(username)
-            if u:
+            if u and u.userobj:
                 if u.store:
                     self.redirect('/list')
-                    pass
+                    return
                 else:
                     self.redirect('/stores/search')
-                    pass
+                    return
             else:
                 #create user object if there's none in the database
                 newuser = models.User(key_name=username)
-                newuser.userobj = u
+                newuser.userobj = user
                 newuser.put()
+                self.redirect('/stores/search')
+                return
         else:
             self.redirect(users.create_login_url(self.request.uri))
             
@@ -43,13 +46,19 @@ class StoreSearch(webapp.RequestHandler):
         zipcode = self.request.get('zipcode')
         stores = []
         
+        city = ""
+        state = ""
         if len(zipcode) != 0:
             citystate = facade.ziptocitystate(zipcode)
             stores = facade.getstoresbycity(citystate[0], citystate[1])
+            city = citystate[0]
+            state = citystate[1]
         
         template_values = {
             'stores' : stores,
             'zipcode' : zipcode,
+            'city' : city,
+            'state' : state,
             'user' : user
         }
         
@@ -75,19 +84,19 @@ class StoreSelection(webapp.RequestHandler):
             newstore.put()
             store = newstore
             
-            user = users.get_current_user()
-            zipcode = self.request.get('zipcode')
-            citystate = facade.ziptocitystate(zipcode)
-            city = citystate[0]
-            state = citystate[1]
-            
-            u = models.getuser(user.nickname())
-            u.store = store
-            u.zipcode = zipcode
-            u.city = city
-            u.state = state
-            
-            u.put()
+        user = users.get_current_user()
+        zipcode = self.request.get('zipcode')
+        citystate = facade.ziptocitystate(zipcode)
+        city = citystate[0]
+        state = citystate[1]
+        
+        u = models.getuser(user.nickname())
+        u.store = store
+        u.zipcode = zipcode
+        u.city = city
+        u.state = state
+        
+        u.put()
         
         self.redirect('/list')
     
@@ -96,13 +105,13 @@ class List(webapp.RequestHandler):
         message = self.request.get('message')
         if message == 'add':
             itemname = self.request.get('item')
-            message = itemname + ' has been added to your list.'
+            message = urllib.unquote(itemname) + ' has been added to your list.'
         elif message == 'delete':
             itemname = self.request.get('item')
-            message = itemname + ' has been removed from your list.'
+            message = urllib.unquote(itemname) + ' has been removed from your list.'
         elif message == 'update':
             itemname = self.request.get('item')
-            message = 'The quantity of ' + itemname + ' has been updated.'
+            message = 'The quantity of ' + urllib.unquote(itemname) + ' has been updated.'
         elif message == 'send':
             message = 'Your order has been sent! You have 24 hours to update your order before it\'s set in stone.'
         else:
@@ -111,6 +120,10 @@ class List(webapp.RequestHandler):
         user = users.get_current_user()
         username = user.nickname()
         u = models.getuser(username)
+        
+        if not u.store:
+            self.redirect('/stores/select')
+            return
         
         lists = models.getlistsforuser(u.key())
         if len(lists) == 0:
@@ -181,10 +194,9 @@ class ProductAdd(webapp.RequestHandler):
         product.image = image
         product.quantity = 1
         
-        #print product.to_xml()
         product.put()
         
-        self.redirect('/list?message=add&item='+product.productname)
+        self.redirect('/list?message=add&item='+urllib.quote_plus(product.productname))
     
 class ProductDelete(webapp.RequestHandler):
     def get(self):
@@ -201,7 +213,7 @@ class ProductDelete(webapp.RequestHandler):
         product = models.getproductinlist(key)
         product.delete()
         
-        self.redirect('/list?message=delete&item='+product.productname)
+        self.redirect('/list?message=delete&item='+urllib.quote_plus(product.productname))
 
 class ProductUpdate(webapp.RequestHandler):
     def get(self):
@@ -227,7 +239,7 @@ class ProductUpdate(webapp.RequestHandler):
         
         product.put()
         
-        self.redirect('/list?message=update&item='+product.productname)
+        self.redirect('/list?message=update&item='+urllib.quote_plus(product.productname))
     
 class Email(webapp.RequestHandler):
     def get(self):
@@ -273,6 +285,10 @@ class Email(webapp.RequestHandler):
         
         self.redirect('/list?message=send')
         
+class ClearDB(webapp.RequestHandler):
+    def get(self):
+        pass
+        
     
 application = webapp.WSGIApplication(
                                         [('/', Login),
@@ -285,7 +301,8 @@ application = webapp.WSGIApplication(
                                          ('/products/add', ProductAdd),
                                          ('/products/delete', ProductDelete),
                                          ('/products/update', ProductUpdate),
-                                         ('/send', Email)]
+                                         ('/send', Email),
+                                         ('/cleardb', ClearDB)]
                                     ,debug=True)
 
 def main():

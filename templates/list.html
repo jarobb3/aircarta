@@ -1,6 +1,8 @@
 <html>
   <body>
-   	<b><i>{{message}}</i></b><br /><br />
+  	{% if message %}
+   		<b><i>{{message}}</i></b><br /><br />
+   	{% endif %}
    	<div>Hi, {{user.userobj.nickname}} <a href = "/logout">Logout</a></div>
    	<div>You're shopping at {{user.store.storename}}, located at {{user.store.storeaddress}} in {{user.city}} {{user.state}}.</div>
    	<div>Your list contains {{products|length}} items.</div>
@@ -10,9 +12,14 @@
 	  	<ul>
 	    {% for product in products %}
 	      <li>
-	      	<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=minus">-</a></b>
+	      	{% ifequal product.quantity 1 %}
+	      		<b>-</b>
+	      	{% else %}
+	      		<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=minus">-</a></b>
+	      	{% endifequal %}
 	      	{{product.quantity}}
 	      	<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=plus">+</a></b>
+	      	
 	      	 | {{product.productname}} ({{product.category}})
 	      	
 	      	<a href = "/products/delete?productid={{product.productid|urlencode}}">Remove</a>

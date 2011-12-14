@@ -2,12 +2,12 @@
   <body>
   	<div>Hi, {{user.nickname}}  <a href = "/logout">Logout</a></div><br />
     <form action="/stores/search" method="get">
-      <div>Search for stores by zip: <br /><input type = "text" name = "zipcode" /></textarea></div>
+      <div>Search for stores by zip: <br /><input type = "text" name = "zipcode" value = "{{zipcode}}" /></textarea></div>
       <div><input type="submit" value="Search for Stores"></div>
     </form>
     
     {% if stores %}
-	    Stores near {{zipcode}}:
+    	Stores near {{zipcode}} in {{city}},{{state}}:
 	  	<ul>
 	    {% for store in stores %}
 	      <li>
