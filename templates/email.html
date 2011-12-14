@@ -2,12 +2,12 @@
 <body>
 	
 	<br />
-	Username : {{user.nickname}}<br />
-	Shop at : {{storename}} <br />
+	Username : {{user.userobj.nickname}}<br />
+	Shop at : {{store.storename}} <br />
 	<ul>
 	{% for product in products %}
 		<li>
-			{{product.itemid}}&nbsp;{{product.name}}
+			{{product.productid}}&nbsp;{{product.productname}}
 		</li>
 	{% endfor %}
 	</ul>

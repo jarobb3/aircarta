@@ -243,13 +243,15 @@ class ProductUpdate(webapp.RequestHandler):
     
 class Email(webapp.RequestHandler):
     def get(self):
+        listkey = self.request.get('list')
         user = users.get_current_user()
         username = user.nickname()
         u = models.getuser(username)
         
-        lists = models.getlistsforuser(u.key())
-        thislist = lists[len(lists)-1]
-        products = models.getproductsoflist(thislist.key())
+        #lists = models.getlistsforuser(u.key())
+        #thislist = lists[len(lists)-1]
+        thelist = models.getlist(listkey)
+        products = models.getproductsoflist(thelist.key())
         
         template_values = {
            'products' : products,

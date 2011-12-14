@@ -27,7 +27,7 @@
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/send?listname={{listname}}&storename={{storename}}">Send</a>
+	    <a href = "/send?list={{list.key|urlencode}}">Send</a>
 	{% endif %}
 
   </body>
