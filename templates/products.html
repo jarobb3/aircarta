@@ -2,7 +2,9 @@
   <body>
     <form action="/products/search" method="get">
       <div>Search for a product: <input type = "text" name = "q" /></div>
+      <input type = "hidden" name = "listkey" value = {{listkey|urlencode}} />
       <div><input type="submit" value="Search"></div>
+      
     </form>
     
     {% if products %}
@@ -11,14 +13,14 @@
 	  	<ul>
 	    {% for product in products %}
 	      <li>
-	      	<a href = "/products/add?itemid={{product.ItemID|urlencode}}&itemname={{product.Itemname|urlencode}}&category={{product.ItemCategory|urlencode}}&itemimage={{product.ItemImage|urlencode}}">
+	      	<a href = "/products/add?listkey={{listkey|urlencode}}&itemid={{product.ItemID|urlencode}}&itemname={{product.Itemname|urlencode}}&category={{product.ItemCategory|urlencode}}&itemimage={{product.ItemImage|urlencode}}">
 	      		<img src = "{{product.ItemImage}}" />{{product.Itemname}}
 	      	</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/products/search">Clear</a>
+	    <a href = "/products/search?listkey={{listkey|urlencode}}">Clear</a>
 	    
 	{% endif %}
 

@@ -139,9 +139,16 @@ class List(webapp.RequestHandler):
             thelist = newlist
         else:
             #open most recent list; either at the beginning or end
-            thelist = lists[len(lists)-1]
+            thelist = lists[len(lists) - 1]
         
         products = models.getproductsoflist(thelist.key())
+        totals = models.listtotals(products,.085)
+        
+        thelist.subtotal = totals[0]
+        thelist.tax = totals[1]
+        thelist.total = totals[2]
+        
+        thelist.put()
         
         template_values = {
            'products' : products,
@@ -160,6 +167,7 @@ class ProductSearch(webapp.RequestHandler):
         u = models.getuser(username)
         
         query = self.request.get('q')
+        listkey = self.request.get('listkey')
         
         results = []
         if query:
@@ -167,7 +175,8 @@ class ProductSearch(webapp.RequestHandler):
 
         template_values = {
            'products' : results,
-           'q' : query
+           'q' : query,
+           'listkey' : listkey
         }  
               
         path = os.path.join(os.path.dirname(__file__), 'templates/products.html')
@@ -175,59 +184,56 @@ class ProductSearch(webapp.RequestHandler):
     
 class ProductAdd(webapp.RequestHandler):
     def get(self):
-        user = users.get_current_user()
-        username = user.nickname()
-        u = models.getuser(username)
+        listkey = self.request.get('listkey')
+        thelist = models.getlist(listkey)
         
         productid = self.request.get('itemid')
         productname = self.request.get('itemname')
         category = self.request.get('category')
         image = self.request.get('image')
         
-        lists = models.getlistsforuser(u.key())
-        thelist = lists[len(lists)-1]
-        
-        product = models.Product(parent=thelist.key(),key_name=productid)
+        product = models.Product(parent=thelist.key(), key_name=productid)
         product.productid = productid
         product.productname = productname
         product.category = category
         product.image = image
         product.quantity = 1
+        product.baseprice = facade.randomprice()
+        product.totalprice = product.baseprice * product.quantity
+        product.isTaxable = facade.isTaxable(category)
         
         product.put()
         
-        self.redirect('/list?message=add&item='+urllib.quote_plus(product.productname))
+        self.redirect('/list?message=add&item=' + urllib.quote_plus(product.productname))
     
 class ProductDelete(webapp.RequestHandler):
     def get(self):
-        user = users.get_current_user()
-        username = user.nickname()
-        u = models.getuser(username)
-        
-        lists = models.getlistsforuser(u.key())
-        thelist = lists[len(lists)-1]
+        listkey = self.request.get('listkey')
+        thelist = models.getlist(listkey)
         
         productid = self.request.get('productid')
-        key = models.productkey(username, thelist.key().id_or_name(), productid)
+        userkeypath = thelist.parent_key().id_or_name()
+        listkeypath = thelist.key().id_or_name()
+        productkey = models.productkey(userkeypath, listkeypath, productid)
         
-        product = models.getproductinlist(key)
+        product = models.getproductinlist(productkey)
+        
         product.delete()
         
-        self.redirect('/list?message=delete&item='+urllib.quote_plus(product.productname))
+        self.redirect('/list?message=delete&item=' + urllib.quote_plus(product.productname))
 
 class ProductUpdate(webapp.RequestHandler):
     def get(self):
-        user = users.get_current_user()
-        username = user.nickname()
-        u = models.getuser(username)
+        listkey = self.request.get('listkey')
         
-        lists = models.getlistsforuser(u.key())
-        thelist = lists[len(lists)-1]
+        thelist = models.getlist(listkey)
         
         productid = self.request.get('productid')
-        key = models.productkey(username, thelist.key().id_or_name(), productid)
+        userkeypath = thelist.parent_key().id_or_name()
+        listkeypath = thelist.key().id_or_name()
+        productkey = models.productkey(userkeypath, listkeypath, productid)
         
-        product = models.getproductinlist(key)
+        product = models.getproductinlist(productkey)
         
         operation = self.request.get('oper')
         if operation == 'plus':
@@ -237,44 +243,61 @@ class ProductUpdate(webapp.RequestHandler):
         else:
             pass
         
+        product.totalprice = product.baseprice * product.quantity
+        
         product.put()
         
-        self.redirect('/list?message=update&item='+urllib.quote_plus(product.productname))
+        self.redirect('/list?message=update&item=' + urllib.quote_plus(product.productname))
+        
+class Checkout(webapp.RequestHandler):
+    def get(self):
+        #show a list of the user's order
+        #show subtotal, tax, service charge, and total
+        #Go Back, Pay with: [Google Checkout] [Paypal]
+        #send email after this step
+        pass
+    
+class Schedule(webapp.RequestHandler):
+    def get(self):
+        pass
     
 class Email(webapp.RequestHandler):
     def get(self):
-        listkey = self.request.get('list')
         user = users.get_current_user()
         username = user.nickname()
         u = models.getuser(username)
         
-        #lists = models.getlistsforuser(u.key())
-        #thislist = lists[len(lists)-1]
+        listkey = self.request.get('listkey')
         thelist = models.getlist(listkey)
         products = models.getproductsoflist(thelist.key())
+        
+        thelist.service = models.calcservice(thelist.subtotal)
+        thelist.total = thelist.subtotal + thelist.tax + thelist.service
+        thelist.put()
         
         template_values = {
            'products' : products,
            'store' : u.store,
-           'user' : u
+           'user' : u,
+           'list' : thelist
         }
         
         intro = """
             Yo,
             
-            We just got a new order! Here's the user's list --
+            We just got a new order! Here's the info -- <br />
         
         """
         
         path = os.path.join(os.path.dirname(__file__), 'templates/email.html')
-        productlist = template.render(path,template_values)
+        productlist = template.render(path, template_values)
         
         signature = """
             Hugs, <br />
             AircartApp
         """
         
-        html_content = intro+productlist+signature
+        html_content = intro + productlist + signature
         text_content = strip_tags(html_content)
         
         message = mail.EmailMessage()
@@ -286,11 +309,7 @@ class Email(webapp.RequestHandler):
         message.send()
         
         self.redirect('/list?message=send')
-        
-class ClearDB(webapp.RequestHandler):
-    def get(self):
-        pass
-        
+
     
 application = webapp.WSGIApplication(
                                         [('/', Login),
@@ -303,9 +322,10 @@ application = webapp.WSGIApplication(
                                          ('/products/add', ProductAdd),
                                          ('/products/delete', ProductDelete),
                                          ('/products/update', ProductUpdate),
-                                         ('/send', Email),
-                                         ('/cleardb', ClearDB)]
-                                    ,debug=True)
+                                         ('/list/checkout', Checkout),
+                                         ('/list/schedule', Schedule),
+                                         ('/send', Email)]
+                                    , debug=True)
 
 def main():
     run_wsgi_app(application)

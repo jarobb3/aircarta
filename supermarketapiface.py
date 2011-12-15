@@ -1,6 +1,7 @@
 import google.appengine.api.urlfetch as urlfetch
 import urllib
 import aparser
+import random
 
 apikey = 'ec4f187ef5'
 baseurl = 'http://www.SupermarketAPI.com/api.asmx/'
@@ -90,3 +91,17 @@ def ziptocitystate(zipcode):
     city = s4[:s4.find(',')]
     state = s4[s4.find(',')+2:]
     return city,state
+
+def randomprice():
+    n = round(random.uniform(0.01,10.00),2)
+    
+    #makes sure last digit isn't a zero. a hack to make the display right
+    if n % 10 == 0:
+        n += 0.01
+    
+    return n
+
+def isTaxable(category):
+    return random.choice([True,False])
+
+    

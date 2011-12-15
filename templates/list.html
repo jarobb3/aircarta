@@ -7,7 +7,7 @@
    	<div>You're shopping at {{user.store.storename}}, located at {{user.store.storeaddress}} in {{user.city}} {{user.state}}.</div>
    	<div>Your list contains {{products|length}} items.</div>
    	<br />
-   	<div><a href = "/products/search">Add an item</a></div>
+   	<div><a href = "/products/search?listkey={{list.key|urlencode}}">Add an item</a></div>
     {% if products %}
 	  	<ul>
 	    {% for product in products %}
@@ -15,19 +15,21 @@
 	      	{% ifequal product.quantity 1 %}
 	      		<b>-</b>
 	      	{% else %}
-	      		<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=minus">-</a></b>
+	      		<b><a href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=minus">-</a></b>
 	      	{% endifequal %}
+	      	<b><a href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=plus">+</a></b>
 	      	{{product.quantity}}
-	      	<b><a href = "/products/update?productid={{product.productid|urlencode}}&oper=plus">+</a></b>
 	      	
-	      	 | {{product.productname}} ({{product.category}})
+	      	 {{product.productname}} ({{product.category}}) | ${{product.totalprice}}{% if product.isTaxable %}T{% endif %}
 	      	
-	      	<a href = "/products/delete?productid={{product.productid|urlencode}}">Remove</a>
+	      	<a href = "/products/delete?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}">Remove</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/send?list={{list.key|urlencode}}">Send</a>
+	    <div>Subtotal = ${{list.subtotal}}</div>
+	    
+	    <a href = "/send?listkey={{list.key|urlencode}}">Checkout</a>
 	{% endif %}
 
   </body>

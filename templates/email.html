@@ -3,13 +3,19 @@
 	
 	<br />
 	Username : {{user.userobj.nickname}}<br />
-	Shop at : {{store.storename}} <br />
+	Store : {{store.storename}} @ {{store.storeaddress}} <br />
 	<ul>
 	{% for product in products %}
 		<li>
-			{{product.productid}}&nbsp;{{product.productname}}
+			{{product.productid}}&nbsp;{{product.productname}} | {{product.quantity}} @ ${{product.baseprice}} = ${{product.totalprice}}
 		</li>
 	{% endfor %}
+	
+	
+	<div>Subtotal = ${{list.subtotal}}</div>
+	<div>Tax = ${{list.tax}}</div>
+	<div>Service = ${{list.service}}</div>
+	<div>Total = ${{list.total}}</div>
 	</ul>
 
 </body>
