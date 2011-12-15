@@ -296,7 +296,7 @@ class Email(webapp.RequestHandler):
         
         listkey = self.request.get('listkey')
         thelist = models.getlist(listkey)
-        products = models.getproductsoflist(listkey)
+        products = models.getproductsoflist(thelist)
         
         thelist.service = models.calcservice(thelist.subtotal)
         thelist.total = thelist.subtotal + thelist.tax + thelist.service
