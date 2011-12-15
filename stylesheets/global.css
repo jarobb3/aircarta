@@ -1,0 +1,22 @@
+body{width:800px;}
+
+.bold{ font-weight: bold; }
+.italic{ font-style: italic; }
+
+.underline-less{ text-decoration: none; }
+
+.padding-less{ padding:0; }
+
+.notification{ background-color:#e4e4e4; }
+
+.list{ list-style: none; line-height:22px; }
+
+.fl{ float:left; }
+.fr{ float:right; }
+
+.full{width:100%;}
+
+.prs{padding-right:5px;}
+
+.text-right{text-align:right;}
+.text-left{text-align:left;}

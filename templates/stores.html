@@ -8,7 +8,7 @@
     
     {% if stores %}
     	Stores near {{zipcode}} in {{city}},{{state}}:
-	  	<ul>
+	  	<ul class = "padding-less">
 	    {% for store in stores %}
 	      <li>
 	      	<a href = "/stores/select?storeid={{store.StoreId|urlencode}}&storename={{store.Storename|urlencode}}&storeaddress={{store.Address|urlencode}}&zipcode={{zipcode|urlencode}}">

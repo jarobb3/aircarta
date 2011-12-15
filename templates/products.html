@@ -1,4 +1,8 @@
 <html>
+<head>
+	<link type = "text/css" rel="stylesheet" href="/stylesheets/global.css" />
+</head>
+
   <body>
     <form action="/products/search" method="get">
       <div>Search for a product: <input type = "text" name = "q" /></div>
@@ -8,19 +12,19 @@
     </form>
     
     {% if products %}
-    	
-	    Found {{products|length}} for {{q}}:
-	  	<ul>
+    	<div>
+	    Found {{products|length}} for {{q}}: <a href = "/products/search?listkey={{listkey|urlencode}}">Clear</a>
+	  	<ul class = "padding-less list">
 	    {% for product in products %}
-	      <li>
-	      	<a href = "/products/add?listkey={{listkey|urlencode}}&itemid={{product.ItemID|urlencode}}&itemname={{product.Itemname|urlencode}}&category={{product.ItemCategory|urlencode}}&itemimage={{product.ItemImage|urlencode}}">
-	      		<img src = "{{product.ItemImage}}" />{{product.Itemname}}
-	      	</a>
-	      </li>
+		    <a class = "underline-less" href = "/products/add?listkey={{listkey|urlencode}}&itemid={{product.ItemID|urlencode}}&itemname={{product.Itemname|urlencode}}&category={{product.ItemCategory|urlencode}}&itemimage={{product.ItemImage|urlencode}}">
+		      <li class = "fl" style = "width:380px;">
+		      		<div class = "fl"><img src = "{{product.ItemImage}}" /></div><div style="margin-top:40px;margin-left:10px;">{{product.Itemname}}</div>
+		      </li>
+		    </a>
 	    {% endfor %}
 	    </ul>
+	    </div>
 	    
-	    <a href = "/products/search?listkey={{listkey|urlencode}}">Clear</a>
 	    
 	{% endif %}
 

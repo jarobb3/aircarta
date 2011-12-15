@@ -1,35 +1,38 @@
 <html>
+<head>
+	<link type = "text/css" rel="stylesheet" href="/stylesheets/global.css" />
+</head>
   <body>
   	{% if message %}
-   		<b><i>{{message}}</i></b><br /><br />
+   		<div class = "notification italic"> {{message}}</div><br /><br />
    	{% endif %}
    	<div>Hi, {{user.userobj.nickname}} <a href = "/logout">Logout</a></div>
    	<div>You're shopping at {{user.store.storename}}, located at {{user.store.storeaddress}} in {{user.city}} {{user.state}}.</div>
    	<div>Your list contains {{products|length}} items.</div>
    	<br />
-   	<div><a href = "/products/search?listkey={{list.key|urlencode}}">Add an item</a></div>
+   	<div><a class = "underline-less" href = "/products/search?listkey={{list.key|urlencode}}"><button>Add an item</button></a></div>
     {% if products %}
-	  	<ul>
+	  	<ul class = "padding-less">
 	    {% for product in products %}
 	      <li>
 	      	{% ifequal product.quantity 1 %}
-	      		<b>-</b>
+	      		<button disabled = "disabled">-</button>
 	      	{% else %}
-	      		<b><a href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=minus">-</a></b>
+	      		<a class = "underline-less" href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=minus"><button>-</button></a>
 	      	{% endifequal %}
-	      	<b><a href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=plus">+</a></b>
-	      	{{product.quantity}}
+	      	<span>{{product.quantity}}</span>
+	      	<a class = "underline-less" href = "/products/update?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}&oper=plus"><button>+</button></a>
 	      	
-	      	 {{product.productname}} ({{product.category}}) | ${{product.totalprice}}{% if product.isTaxable %}T{% endif %}
+	      	<span class = "bold">{{product.productname}}</span> ({{product.category}}) | ${{product.totalprice}}{% if product.isTaxable %}T{% endif %}
 	      	
 	      	<a href = "/products/delete?listkey={{list.key|urlencode}}&productid={{product.productid|urlencode}}">Remove</a>
 	      </li>
 	    {% endfor %}
 	    </ul>
 	    
-	    <div>Subtotal = ${{list.subtotal}}</div>
-	    
-	    <a href = "/checkout?listkey={{list.key|urlencode}}">Checkout</a>
+	    <span class = "italic">Subtotal = ${{list.subtotal}}</span><br />
+	    <a class = "underline-less" href = "/checkout?listkey={{list.key|urlencode}}"><button>Checkout</button></a>
+
 	{% endif %}
 
   </body>

@@ -1,38 +1,46 @@
 <html>
+<head>
+	<link type = "text/css" rel="stylesheet" href="/stylesheets/global.css" />
+</head>
+
 <body>
 
 	<h2>Review your order</h2>
 	<div>
-		Username : {{user.userobj.nickname}}<br />
-		Email : {{user.userobj.email}}<br />
+		<span class = "bold">Username</span>. {{user.userobj.nickname}}<br />
+		<span class = "bold">Email</span>. {{user.userobj.email}}<br />
 	</div>
 	
 	<div>
-		Shopping at {{store.storename}} @ {{store.storeaddress}} in {{user.city}}, {{user.state}}
+		<span class = "bold">Shopping at</span>. {{store.storename}} @ {{store.storeaddress}} in {{user.city}}, {{user.state}}
 		<div><br />
 		<b>In your AirCart...</b>
-		<ul>
+		<ul class = "padding-less list">
 			{% for product in products %}
 				<li>
-					{{product.quantity}} {{product.productname}} | ${{product.totalprice}}
+					<span class = "fl" style = "width:500px;">{{product.productname}} ( {{product.quantity}} )</span>${{product.totalprice}}
 				</li>
 			{% endfor %}
 		</ul>
 		</div>
 	</div>
 	
-	<div>
-		Subtotal = ${{list.subtotal}}<br />
-		Tax = ${{list.tax}}<br />
-		Service = ${{list.service}}<br />
-		Total = ${{list.total}}
+	<div class = "fr full text-right">
+		<ul class = "padding-less list">
+		<li><span class = "bold prs">Subtotal</span>${{list.subtotal}}</li>
+		<li><span class = "bold prs">Tax</span>${{list.tax}}</li>
+		<li><span class = "bold prs">Service</span>${{list.service}}</li>
+		<li><span class = "bold prs">Total</span>${{list.total}}</li>
+		</ul>
 	</div><br />
 	
 	<div>
-		Pay with :
-		<a href = "/send?listkey={{list.key}}"><button>Google Checkout</button></a>
-		<a href = "/send?listkey={{list.key}}"><button>PayPal</button></a><br />
-		<a href = "/list?listkey={{list.key}}">Go Back</a>
+		<div class = "fl"><a href = "/list?listkey={{list.key}}">Go Back</a></div>
+		<div class = "fr">
+			Pay with :
+			<a class = "underline-less" href = "/send?listkey={{list.key}}"><button>Google Checkout</button></a>
+			<a class = "underline-less" href = "/send?listkey={{list.key}}"><button>PayPal</button></a><br />
+		</div>
 	</div>
 	
 
