@@ -1,4 +1,7 @@
 <html>
+<head>
+	<link type = "text/css" rel="stylesheet" href="/stylesheets/global.css" />
+</head>
   <body>
   	<div>Hi, {{user.nickname}}  <a href = "/logout">Logout</a></div><br />
     <form action="/stores/search" method="get">
@@ -7,8 +10,8 @@
     </form>
     
     {% if stores %}
-    	Stores near {{zipcode}} in {{city}},{{state}}:
-	  	<ul class = "padding-less">
+    	Stores near {{zipcode}} in {{city}},{{state}}: <a href = "/stores">Clear</a>
+	  	<ul class = "padding-less list">
 	    {% for store in stores %}
 	      <li>
 	      	<a href = "/stores/select?storeid={{store.StoreId|urlencode}}&storename={{store.Storename|urlencode}}&storeaddress={{store.Address|urlencode}}&zipcode={{zipcode|urlencode}}">
@@ -18,7 +21,6 @@
 	    {% endfor %}
 	    </ul>
 	    
-	    <a href = "/stores">Clear</a>
 	{% endif %}
 
   </body>
