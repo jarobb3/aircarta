@@ -96,7 +96,7 @@ def randomprice():
     n = round(random.uniform(0.01,10.00),2)
     
     #makes sure last digit isn't a zero. a hack to make the display right
-    if n % 10 == 0:
+    if n*100 % 10 == 0:
         n += 0.01
     
     return n

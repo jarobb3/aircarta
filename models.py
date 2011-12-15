@@ -16,9 +16,9 @@ class Product(db.Model):
     productname = db.StringProperty()
     category = db.StringProperty()
     image = db.StringProperty()
-    quantity = db.IntegerProperty()
-    baseprice = db.FloatProperty()
-    totalprice = db.FloatProperty()
+    quantity = db.IntegerProperty(default=1)
+    baseprice = db.FloatProperty(default=0.0)
+    totalprice = db.FloatProperty(default=0.0)
     isTaxable = db.BooleanProperty()
     
 def productkey(username,listid,productid):
@@ -55,10 +55,10 @@ class GroceryList(db.Model):
     store = db.ReferenceProperty(Store)
     createddate = db.DateTimeProperty(auto_now_add=True)
     fulfilled = db.DateTimeProperty()
-    subtotal = db.FloatProperty()
-    tax = db.FloatProperty()
-    service = db.FloatProperty()
-    total = db.FloatProperty()
+    subtotal = db.FloatProperty(default=0.0)
+    tax = db.FloatProperty(default=0.0)
+    service = db.FloatProperty(default=0.0)
+    total = db.FloatProperty(default=0.0)
     
 def listkey(username):
     return db.Key.from_path('User', username)
@@ -66,8 +66,29 @@ def listkey(username):
 def getlistsforuser(userkey):
     query = db.Query(GroceryList)
     query.ancestor(userkey)
+    query.order('-createddate')
     
     return query.fetch(10)
+
+def getlistsforuseratstore(userkey,storekey):
+    query = db.Query(GroceryList)
+    query.ancestor(userkey)
+    query.filter('store = ', storekey)
+    query.order('-createddate')
+    
+    return query.fetch(10)
+
+def deleteuserlists(userkey):
+    query = db.Query(GroceryList)
+    query.ancestor(userkey)
+    
+    results = query.run()
+    count = 0
+    for item in results:
+        count+=1
+        item.delete()
+        
+    return count
 
 def getlist(listkey):
     return db.get(listkey)

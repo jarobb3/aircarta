@@ -37,6 +37,11 @@ class Login(webapp.RequestHandler):
             
 class Logout(webapp.RequestHandler):
     def get(self):
+        #user = users.get_current_user()
+        #u = models.getuser(user.nickname())
+        #models.deleteuserlists(u)
+        #u.delete()
+        
         self.redirect(users.create_logout_url('/login'))
     
 class StoreSearch(webapp.RequestHandler):
@@ -125,7 +130,7 @@ class List(webapp.RequestHandler):
             self.redirect('/stores/select')
             return
         
-        lists = models.getlistsforuser(u.key())
+        lists = models.getlistsforuseratstore(u.key(),u.store.key())
         if len(lists) == 0:
             #user has no lists yet, create their first one
             
@@ -137,18 +142,22 @@ class List(webapp.RequestHandler):
             
             newlist.put()
             thelist = newlist
+        elif self.request.get('listkey'):
+            listkey = self.request.get('listkey')
+            thelist = models.getlist(listkey)
         else:
-            #open most recent list; either at the beginning or end
+            #open most recent list
             thelist = lists[len(lists) - 1]
         
         products = models.getproductsoflist(thelist.key())
-        totals = models.listtotals(products,.085)
+        if len(products) > 0:
+            totals = models.listtotals(products,.085)
         
-        thelist.subtotal = totals[0]
-        thelist.tax = totals[1]
-        thelist.total = totals[2]
+            thelist.subtotal = totals[0]
+            thelist.tax = totals[1]
+            thelist.total = totals[2]
         
-        thelist.put()
+            thelist.put()
         
         template_values = {
            'products' : products,
@@ -255,7 +264,25 @@ class Checkout(webapp.RequestHandler):
         #show subtotal, tax, service charge, and total
         #Go Back, Pay with: [Google Checkout] [Paypal]
         #send email after this step
-        pass
+        user = users.get_current_user()
+        username = user.nickname()
+        u = models.getuser(username)
+        
+        listkey = self.request.get('listkey')
+        thelist = models.getlist(listkey)
+        
+        products = models.getproductsoflist(thelist)
+        
+        
+        template_values = {
+           'user' : u,
+           'store' : u.store,
+           'products' : products,
+           'list' : thelist
+        } 
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/checkout.html')
+        self.response.out.write(template.render(path, template_values))
     
 class Schedule(webapp.RequestHandler):
     def get(self):
@@ -269,7 +296,7 @@ class Email(webapp.RequestHandler):
         
         listkey = self.request.get('listkey')
         thelist = models.getlist(listkey)
-        products = models.getproductsoflist(thelist.key())
+        products = models.getproductsoflist(listkey)
         
         thelist.service = models.calcservice(thelist.subtotal)
         thelist.total = thelist.subtotal + thelist.tax + thelist.service
@@ -322,7 +349,7 @@ application = webapp.WSGIApplication(
                                          ('/products/add', ProductAdd),
                                          ('/products/delete', ProductDelete),
                                          ('/products/update', ProductUpdate),
-                                         ('/list/checkout', Checkout),
+                                         ('/checkout', Checkout),
                                          ('/list/schedule', Schedule),
                                          ('/send', Email)]
                                     , debug=True)
