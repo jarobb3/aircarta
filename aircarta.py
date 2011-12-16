@@ -27,23 +27,39 @@ class Login(webapp.RequestHandler):
                     return
             else:
                 #create user object if there's none in the database
-                newuser = models.User(key_name=username)
-                newuser.userobj = user
-                newuser.put()
-                self.redirect('/stores/search')
+                #newuser = models.User(key_name=username)
+                #newuser.userobj = user
+                #newuser.put()
+                #self.redirect('/stores/search')
+                self.redirect('/user/create')
                 return
         else:
             self.redirect(users.create_login_url(self.request.uri))
             
 class Logout(webapp.RequestHandler):
-    def get(self):
-        #user = users.get_current_user()
-        #u = models.getuser(user.nickname())
-        #models.deleteuserlists(u)
-        #u.delete()
-        
+    def get(self):        
         self.redirect(users.create_logout_url('/login'))
-    
+
+class UserCreate(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        newuser = models.User(key_name=user.nickname())
+        newuser.userobj = user
+        newuser.put()
+        self.redirect('/login')
+ 
+class UserDelete(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        u = models.getuser(user.nickname())
+        models.deleteuserlists(u)
+        u.delete()
+        self.redirect('/login')
+        
+class UserProfile(webapp.RequestHandler):
+    def get(self):
+        pass
+        
 class StoreSearch(webapp.RequestHandler):
     def get(self):
         #search for stores and template
@@ -342,6 +358,8 @@ application = webapp.WSGIApplication(
                                         [('/', Login),
                                          ('/login', Login),
                                          ('/logout', Logout),
+                                         ('/user/create', UserCreate),
+                                         ('/user/delete', UserDelete),
                                          ('/stores/search', StoreSearch),
                                          ('/stores/select', StoreSelection),
                                          ('/list', List),
