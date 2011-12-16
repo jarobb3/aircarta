@@ -1,3 +1,6 @@
+from google.appengine.dist import use_library
+use_library('django', '1.2')
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
@@ -10,6 +13,7 @@ import supermarketapiface as facade
 import models
 import os
 import urllib
+
 
 class Login(webapp.RequestHandler):
     def get(self):
@@ -58,7 +62,32 @@ class UserDelete(webapp.RequestHandler):
         
 class UserProfile(webapp.RequestHandler):
     def get(self):
-        pass
+        #get all of a user's lists
+        username = self.request.get('username')
+        userkey = models.userkey(username)
+        
+        lists = models.getlistsforuser(userkey)
+        
+        products = None
+        selectedlist = None
+        listkey = self.request.get('listkey')
+        if listkey:
+            selectedlist = models.getlist(listkey)
+            products = models.getproductsoflist(selectedlist)
+        
+        template_values = {
+           'lists' : lists,
+           'products' : products,
+           'selectedlist' : selectedlist,
+           'username' : username
+        }
+        
+        #print lists.fetch(1,1)[0].to_xml()
+        #return
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/profile.html')
+        self.response.out.write(template.render(path, template_values))
+          
         
 class StoreSearch(webapp.RequestHandler):
     def get(self):
@@ -274,12 +303,8 @@ class ProductUpdate(webapp.RequestHandler):
         
         self.redirect('/list?message=update&item=' + urllib.quote_plus(product.productname))
         
-class Checkout(webapp.RequestHandler):
+class ListCheckout(webapp.RequestHandler):
     def get(self):
-        #show a list of the user's order
-        #show subtotal, tax, service charge, and total
-        #Go Back, Pay with: [Google Checkout] [Paypal]
-        #send email after this step
         user = users.get_current_user()
         username = user.nickname()
         u = models.getuser(username)
@@ -289,6 +314,9 @@ class Checkout(webapp.RequestHandler):
         
         products = models.getproductsoflist(thelist)
         
+        thelist.service = models.calcservice(thelist.subtotal)
+        thelist.total = thelist.subtotal + thelist.tax + thelist.service
+        thelist.put()
         
         template_values = {
            'user' : u,
@@ -300,8 +328,15 @@ class Checkout(webapp.RequestHandler):
         path = os.path.join(os.path.dirname(__file__), 'templates/checkout.html')
         self.response.out.write(template.render(path, template_values))
     
-class Schedule(webapp.RequestHandler):
+class ListSchedule(webapp.RequestHandler):
     def get(self):
+        pass
+    
+class ListSubmit(webapp.RequestHandler):
+    def get(self):
+        #add a submitted date to the list
+        #send to Email
+        #anything else?
         pass
     
 class Email(webapp.RequestHandler):
@@ -313,10 +348,6 @@ class Email(webapp.RequestHandler):
         listkey = self.request.get('listkey')
         thelist = models.getlist(listkey)
         products = models.getproductsoflist(thelist)
-        
-        thelist.service = models.calcservice(thelist.subtotal)
-        thelist.total = thelist.subtotal + thelist.tax + thelist.service
-        thelist.put()
         
         template_values = {
            'products' : products,
@@ -360,15 +391,17 @@ application = webapp.WSGIApplication(
                                          ('/logout', Logout),
                                          ('/user/create', UserCreate),
                                          ('/user/delete', UserDelete),
+                                         ('/user/profile', UserProfile),
                                          ('/stores/search', StoreSearch),
                                          ('/stores/select', StoreSelection),
                                          ('/list', List),
+                                         ('/list/checkout', ListCheckout),
+                                         ('/list/schedule', ListSchedule),
+                                         ('/list/submit', ListSubmit),
                                          ('/products/search', ProductSearch),
                                          ('/products/add', ProductAdd),
                                          ('/products/delete', ProductDelete),
                                          ('/products/update', ProductUpdate),
-                                         ('/checkout', Checkout),
-                                         ('/list/schedule', Schedule),
                                          ('/send', Email)]
                                     , debug=True)
 

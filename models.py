@@ -1,6 +1,4 @@
 from google.appengine.ext import db
-import locale
-
 
 class Store(db.Model):
     storeid = db.StringProperty()
@@ -51,14 +49,22 @@ def userkey(username):
     return db.Key.from_path('User', username)
 
 
+
+
+
+
 class GroceryList(db.Model):
     store = db.ReferenceProperty(Store)
-    createddate = db.DateTimeProperty(auto_now_add=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    submitted = db.DateTimeProperty()
     fulfilled = db.DateTimeProperty()
     subtotal = db.FloatProperty(default=0.0)
     tax = db.FloatProperty(default=0.0)
     service = db.FloatProperty(default=0.0)
     total = db.FloatProperty(default=0.0)
+    
+def alllists():
+    return GroceryList.all()
     
 def listkey(username):
     return db.Key.from_path('User', username)
@@ -66,15 +72,15 @@ def listkey(username):
 def getlistsforuser(userkey):
     query = db.Query(GroceryList)
     query.ancestor(userkey)
-    query.order('-createddate')
+    query.order('-created')
     
-    return query.fetch(10)
+    return query.run()
 
 def getlistsforuseratstore(userkey,storekey):
     query = db.Query(GroceryList)
     query.ancestor(userkey)
     query.filter('store = ', storekey)
-    query.order('-createddate')
+    query.order('-created')
     
     return query.fetch(10)
 

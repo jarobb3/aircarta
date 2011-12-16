@@ -17,8 +17,8 @@
 		<b>In your AirCart...</b>
 		<ul class = "padding-less list">
 			{% for product in products %}
-				<li>
-					<span class = "fl" style = "width:500px;">{{product.productname}} ( {{product.quantity}} )</span>${{product.totalprice}}
+				<li class = "fl full">
+					<span class = "fl" style = "width:500px;">{{product.productname}} ( {{product.quantity}} )</span><span class = "fr">${{product.totalprice}}</span>
 				</li>
 			{% endfor %}
 		</ul>
@@ -34,6 +34,7 @@
 		</ul>
 	</div><br />
 	
+	{% if not list.fulfilled and not list.submitted %}
 	<div>
 		<div class = "fl"><a href = "/list?listkey={{list.key}}">Go Back</a></div>
 		<div class = "fr">
@@ -42,6 +43,7 @@
 			<a class = "underline-less" href = "/send?listkey={{list.key}}"><button>PayPal</button></a><br />
 		</div>
 	</div>
+	{% endif %}
 	
 
 </body>

@@ -13,7 +13,20 @@ indexes:
 - kind: GroceryList
   ancestor: yes
   properties:
+  - name: created
+    direction: desc
+
+- kind: GroceryList
+  ancestor: yes
+  properties:
   - name: createddate
+    direction: desc
+
+- kind: GroceryList
+  ancestor: yes
+  properties:
+  - name: store
+  - name: created
     direction: desc
 
 - kind: GroceryList
